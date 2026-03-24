@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Users, GraduationCap, ShieldAlert, Award, Briefcase, BookOpen, TrendingUp, UserCheck, Calendar, Search, CalendarClock, FileText, BarChart3, FileUp
@@ -72,6 +72,13 @@ const DashboardPage = () => {
   const [studentMatches, setStudentMatches] = useState<FacultyStudentSearchRow[]>([]);
   const [studentSearchLoading, setStudentSearchLoading] = useState(false);
 
+  const [adminMetrics, setAdminMetrics] = useState<null | {
+    students_total: number;
+    faculty_total: number;
+    violations_total: number;
+    achievements_total: number;
+  }>(null);
+
   const runStudentSearch = useCallback(async () => {
     const q = studentSearch.trim();
     if (!q) {
@@ -97,14 +104,65 @@ const DashboardPage = () => {
     return () => clearTimeout(t);
   }, [isFaculty, runStudentSearch]);
 
-  const stats = isAdmin
-    ? [
-        { label: "Students", value: "—", icon: Users, trend: " ", color: "text-primary" },
-        { label: "Faculty", value: "—", icon: GraduationCap, trend: " ", color: "text-secondary" },
-        { label: "Violations", value: "—", icon: ShieldAlert, trend: " ", color: "text-destructive" },
-        { label: "Achievements", value: "—", icon: Award, trend: " ", color: "text-accent-foreground" },
-      ]
-    : [];
+  useEffect(() => {
+    if (!isAdmin) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await api.adminMetrics();
+        if (cancelled) return;
+        setAdminMetrics({
+          students_total: res.data.students_total,
+          faculty_total: res.data.faculty_total,
+          violations_total: res.data.violations_total,
+          achievements_total: res.data.achievements_total,
+        });
+      } catch {
+        if (cancelled) return;
+        setAdminMetrics(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isAdmin]);
+
+  const stats = useMemo(
+    () =>
+      isAdmin
+        ? [
+            {
+              label: "Students",
+              value: adminMetrics ? String(adminMetrics.students_total) : "—",
+              icon: Users,
+              trend: " ",
+              color: "text-primary",
+            },
+            {
+              label: "Faculty",
+              value: adminMetrics ? String(adminMetrics.faculty_total) : "—",
+              icon: GraduationCap,
+              trend: " ",
+              color: "text-secondary",
+            },
+            {
+              label: "Violations",
+              value: adminMetrics ? String(adminMetrics.violations_total) : "—",
+              icon: ShieldAlert,
+              trend: " ",
+              color: "text-destructive",
+            },
+            {
+              label: "Achievements",
+              value: adminMetrics ? String(adminMetrics.achievements_total) : "—",
+              icon: Award,
+              trend: " ",
+              color: "text-accent-foreground",
+            },
+          ]
+        : [],
+    [adminMetrics, isAdmin]
+  );
 
   const modules = isAdmin
     ? [...managementModules, ...adminOnlyModules]

@@ -109,6 +109,32 @@ app.post("/api/admin/users", requireAuth, requireRole(["admin"]), (req, res) => 
   }
 });
 
+app.get("/api/admin/metrics", requireAuth, requireRole(["admin"]), (_req, res) => {
+  try {
+    const usersTotal = db.prepare("SELECT COUNT(*) as n FROM users").get()?.n ?? 0;
+    const studentsTotal = db.prepare("SELECT COUNT(*) as n FROM students").get()?.n ?? 0;
+    const facultyTotal = db.prepare("SELECT COUNT(*) as n FROM faculty").get()?.n ?? 0;
+    const violationsTotal = db.prepare("SELECT COUNT(*) as n FROM violations").get()?.n ?? 0;
+    const achievementsTotal = db.prepare("SELECT COUNT(*) as n FROM achievements").get()?.n ?? 0;
+    const eventsTotal = db.prepare("SELECT COUNT(*) as n FROM events").get()?.n ?? 0;
+    const organizationsTotal = db.prepare("SELECT COUNT(*) as n FROM organizations").get()?.n ?? 0;
+
+    return res.json({
+      data: {
+        users_total: usersTotal,
+        students_total: studentsTotal,
+        faculty_total: facultyTotal,
+        violations_total: violationsTotal,
+        achievements_total: achievementsTotal,
+        events_total: eventsTotal,
+        organizations_total: organizationsTotal,
+      },
+    });
+  } catch {
+    return res.status(400).json({ message: "Unable to load metrics" });
+  }
+});
+
 app.get("/api/materials", requireAuth, (req, res) => {
   const termId = Number(req.query.term_id);
   const courseId = Number(req.query.course_id);

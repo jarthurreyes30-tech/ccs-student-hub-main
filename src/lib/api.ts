@@ -227,6 +227,16 @@ export type ProgrammingContestRow = {
   pending_violations: number;
 };
 
+export type AdminMetrics = {
+  users_total: number;
+  students_total: number;
+  faculty_total: number;
+  violations_total: number;
+  achievements_total: number;
+  events_total: number;
+  organizations_total: number;
+};
+
 export function getToken() {
   return localStorage.getItem(TOKEN_KEY);
 }
@@ -277,6 +287,7 @@ export const api = {
   login: (username: string, password: string) =>
     request("/api/auth/login", { method: "POST", body: JSON.stringify({ username, password }) }) as Promise<{ token: string; user: ApiUser }>,
   me: () => request("/api/me") as Promise<{ user: { role: ApiUser["role"]; username: string; sub: number } }>,
+  adminMetrics: () => request("/api/admin/metrics") as Promise<{ data: AdminMetrics }>,
   myStudentProfile: () => request("/api/my/student-profile") as Promise<{ data: any }>,
   myFacultyProfile: () => request("/api/my/faculty-profile") as Promise<{ data: any }>,
   myViolations: () => request("/api/my/violations") as Promise<{ data: any[] }>,
